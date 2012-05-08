@@ -1,0 +1,1 @@
+web: bundle exec ruby whoisbot.rb -sv -e prod -p $PORT
