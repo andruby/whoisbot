@@ -25,7 +25,6 @@ class Whoisbot < Goliath::API
       EM.defer do
         env.stream_send "<style type='text/css'>.box { float:left; width: #{(base_domain.length * 8) + 50}px; border: 1px solid black; padding: 3px} </style>"
         env.stream_send "<h3>Checking #{TLDS.count} tlds for base domain #{base_domain}</h3>"
-        env.stream_send "<h4>Domains Available:</h4>"
         env.stream_send "<div>"
         TLDS.each { |tld| env.stream_send "<div class='box #{tld.gsub('.','_')}' style=''>#{base_domain + tld}</div>" }
         env.stream_send "</div>"
