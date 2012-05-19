@@ -28,6 +28,7 @@ class Whoisbot < Goliath::API
         env.stream_send "<div>"
         TLDS.each { |tld| env.stream_send "<div class='box #{tld.gsub('.','_')}' style=''>#{base_domain + tld}</div>" }
         env.stream_send "</div>"
+        env.stream_send "<p>by <a href='http://twitter.com/andruby'>@andruby</a></p>"
         TLDS.each do |tld|
           begin
             if Whois.whois(base_domain + tld).properties[:available?]
@@ -46,6 +47,7 @@ class Whoisbot < Goliath::API
       response = ""
       response << "<h4>Base Domain</h4>"
       response << "<form method='get'><input type='text' name='query'><input type='submit'></from>"
+      response << "<p>by <a href='http://twitter.com/andruby'>@andruby</a></p>"
       [200, {'Content-Type' => 'text/html'}, response]
     end
   end
