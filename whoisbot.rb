@@ -25,6 +25,7 @@ class Whoisbot < Goliath::API
       EM.defer do
         env.stream_send "<style type='text/css'>.box { float:left; width: #{(base_domain.length * 8) + 50}px; border: 1px solid black; padding: 3px} </style>"
         env.stream_send "<h3>Checking #{TLDS.count} tlds for base domain #{base_domain}</h3>"
+        env.stream_send File.read(File.join(File.dirname(__FILE__), 'public', 'javascript.js'))
         env.stream_send "<div>"
         TLDS.each { |tld| env.stream_send "<div class='box #{tld.gsub('.','_')}' style=''>#{base_domain + tld}</div>" }
         env.stream_send "</div>"
@@ -45,6 +46,7 @@ class Whoisbot < Goliath::API
       [200, {'Content-Type' => 'text/html'}, Goliath::Response::STREAMING]
     else
       response = ""
+      response << File.read(File.join(File.dirname(__FILE__), 'public', 'javascript.js'))
       response << "<h4>Base Domain</h4>"
       response << "<form method='get'><input type='text' name='query'><input type='submit'></from>"
       response << "<p>by <a href='http://twitter.com/andruby'>@andruby</a></p>"
