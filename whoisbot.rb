@@ -57,13 +57,15 @@ class Whoisbot < Goliath::API
   end
 
   def root(env)
-    env.template(:head, :root, :credits, :foot)
-    env.stream_close
+    EM.defer do
+      env.template(:head, :root, :credits, :foot)
+      env.stream_close
+    end
   end
 
   def query(env, base_domain)
-    env.template(:head, :boxes, :credits, base_domain: base_domain, tlds: TLDS)
     EM.defer do
+      env.template(:head, :boxes, :credits, base_domain: base_domain, tlds: TLDS)
       pool = SuperWho.pool(size: 50)
       futures = TLDS.map { |tld| pool.future(:color_for_domain, base_domain, tld, env) }
       futures.each(&:value)
