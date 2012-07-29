@@ -9,11 +9,27 @@ NO_WHOIS_TLDS = Whois::Server.definitions[:tld].select { |tld, host, ops| host.n
 class SuperWho
   include Celluloid
 
-  def color_for_domain(base, tld, env)
+  def color_for_domain(base, tld, env, retries = 5)
     domain = base + tld
-    color = Whois.whois(domain).available? ? 'green' : 'red' rescue 'orange'
+    color = Whois.whois(domain).available? ? 'green' : 'red'
     env.template(:color, tld: tld, color: color)
-    true
+  rescue Whois::ConnectionError, Whois::ResponseIsThrottled => exception
+    retry_cfd(base, tld, env, retries, 1, exception)
+  rescue Timeout::Error => exception
+    retry_cfd(base, tld, env, retries, 5, exception)
+  rescue Exception => exception
+    mark_error(env, tld, exception)
+  end
+
+  def retry_cfd(base, tld, env, retries, penalty, e)
+    sleep 0.2
+    # env.stream_send "<br>Retry (#{retries} left) for [#{tld}]: #{e.class} #{e.message}"
+    retries > 0 ? color_for_domain(base, tld, env, retries - penalty) : mark_error(env, tld, e)
+  end
+
+  def mark_error(env, tld, e)
+    env.template(:color, tld: tld, color: 'orange')
+    env.stream_send "<br>Exception for [#{tld}]: #{e.class} #{e.message}"
   end
 end
 
