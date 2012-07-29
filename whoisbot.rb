@@ -4,6 +4,7 @@ require 'erb'
 
 problem_tlds = []
 TLDS = Whois::Server.definitions[:tld].map(&:first).reject { |v| v.length > 5 } - problem_tlds
+NO_WHOIS_TLDS = Whois::Server.definitions[:tld].select { |tld, host, ops| host.nil? }.map(&:first)
 
 class SuperWho
   include Celluloid
@@ -65,9 +66,9 @@ class Whoisbot < Goliath::API
 
   def query(env, base_domain)
     EM.defer do
-      env.template(:head, :boxes, :credits, base_domain: base_domain, tlds: TLDS)
-      pool = SuperWho.pool(size: 50)
-      futures = TLDS.map { |tld| pool.future(:color_for_domain, base_domain, tld, env) }
+      env.template(:head, :boxes, :credits, base_domain: base_domain, tlds: TLDS, ignore_tlds: NO_WHOIS_TLDS)
+      pool = SuperWho.pool(size: 40)
+      futures = (TLDS - NO_WHOIS_TLDS).map { |tld| pool.future(:color_for_domain, base_domain, tld, env) }
       futures.each(&:value)
       env.template(:foot)
       env.stream_close
