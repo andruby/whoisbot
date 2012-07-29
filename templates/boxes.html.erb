@@ -1,0 +1,8 @@
+<h3>Checking <%= tlds.count %> tlds for base domain <%= base_domain %></h3>
+<div>
+  <% tlds.each do |tld| %>
+    <div class="box <%= tld.gsub('.','_') %>">
+      <%= base_domain + tld %>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>WhoisBot</title>
+    <style type='text/css'>
+      .done {
+        color: white;
+        font-weight: bold
+      }
+      .box {
+        float: left;
+        <% if defined?(base_domain) %>
+        width: <%= (base_domain.length * 8) + 50 %>px;
+        <% end %>
+        border: 1px solid black;
+        padding: 3px
+      }
+    </style>
+  </head>
+  <body>
