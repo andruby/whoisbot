@@ -2,7 +2,7 @@
 <div>
   <% tlds.each do |tld| %>
     <div class="box <%= tld.gsub('.','_') %> <%= ' ignore' if ignore_tlds.include?(tld)%>">
-      <%= base_domain + tld %>
+      <a href="<%= ref_link(base_domain, tld.gsub(/^./,'')) %>"><%= base_domain + tld %></a>
     </div>
   <% end %>
 </div>

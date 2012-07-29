@@ -4,9 +4,8 @@
     <meta charset='utf-8'>
     <title>WhoisBot</title>
     <style type='text/css'>
-      .done {
-        color: white;
-        font-weight: bold
+      a {
+        color: inherit;
       }
       .box {
         float: left;
@@ -14,7 +13,8 @@
         width: <%= (base_domain.length * 8) + 50 %>px;
         <% end %>
         border: 1px solid black;
-        padding: 3px
+        padding: 3px;
+        margin: 0 -1px -1px 0;
       }
       .ignore {
         background-color: #ddd;

@@ -6,6 +6,12 @@ problem_tlds = []
 TLDS = Whois::Server.definitions[:tld].map(&:first).reject { |v| v.length > 5 } - problem_tlds
 NO_WHOIS_TLDS = Whois::Server.definitions[:tld].select { |tld, host, ops| host.nil? }.map(&:first)
 
+class Helper
+  def ref_link(domain, *tlds)
+    "https://www.namecheap.com/domains/domain-name-search/results.aspx?domain=#{domain}&aff=35934&tlds=#{tlds.join(',')}"
+  end
+end
+
 class SuperWho
   include Celluloid
 
@@ -28,8 +34,8 @@ class SuperWho
   end
 
   def mark_error(env, tld, e)
-    env.template(:color, tld: tld, color: 'orange')
-    env.stream_send "<br>Exception for [#{tld}]: #{e.class} #{e.message}"
+    env.template(:color, tld: tld, color: '#ff9900')
+    # env.stream_send "<br>Exception for [#{tld}]: #{e.class} #{e.message}"
   end
 end
 
@@ -51,7 +57,7 @@ class EnvWrapper
   def template(*filenames)
     locals = filenames.pop if filenames.last.is_a?(Hash)
     filenames.each do |filename|
-      stream_send Tilt.new("templates/#{filename}.html.erb").render(Object.new, locals || {})
+      stream_send Tilt.new("templates/#{filename}.html.erb").render(Helper.new, locals || {})
     end
   end
 end
