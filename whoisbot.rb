@@ -15,12 +15,12 @@ end
 class SuperWho
   include Celluloid
 
-  def color_for_domain(base, tld, env, retries = 5)
+  def color_for_domain(base, tld, env, retries = 10)
     domain = base + tld
     color = Whois.whois(domain).available? ? 'green' : 'red'
     env.template(:color, tld: tld, color: color)
   rescue Whois::ConnectionError, Whois::ResponseIsThrottled => exception
-    retry_cfd(base, tld, env, retries, 1, exception)
+    retry_cfd(base, tld, env, retries, 2, exception)
   rescue Timeout::Error => exception
     retry_cfd(base, tld, env, retries, 5, exception)
   rescue Exception => exception
@@ -28,7 +28,7 @@ class SuperWho
   end
 
   def retry_cfd(base, tld, env, retries, penalty, e)
-    sleep 0.2
+    sleep 0.4
     # env.stream_send "<br>Retry (#{retries} left) for [#{tld}]: #{e.class} #{e.message}"
     retries > 0 ? color_for_domain(base, tld, env, retries - penalty) : mark_error(env, tld, e)
   end
