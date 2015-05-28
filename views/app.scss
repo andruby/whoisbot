@@ -1,5 +1,9 @@
-.search-box {
-  margin: 200px auto 0 auto;
+.search {
+  margin: 20px auto 0 auto;
   width: 200px;
   background-color: #eee;
+  transition: all 0.5s ease-in-out;
+  &.virgin {
+    margin-top: 200px;
+  }
 }
