@@ -3,8 +3,11 @@ require 'sinatra/base'
 require 'sinatra/reloader'
 require 'sinatra/sse'
 require 'whois'
+require 'sass'
 
-TLDS = Whois::Server.definitions[:tld].reject { |tld, host, ops| host.nil? }.map(&:first)
+TLDS = Whois::Server.definitions[:tld].reject do |tld, host, ops|
+  host.nil?
+end.map(&:first)
 
 class Whoisbot < Sinatra::Base
   include Sinatra::SSE
@@ -19,21 +22,49 @@ class Whoisbot < Sinatra::Base
 
   get '/whois/:base' do
     base = params['base']
-    sse_stream do |out|
-      EM::Iterator.new(TLDS, 50).each(
-        Proc.new do |tld, iter|
-          domain = base + tld
-          if Whois.whois(domain).available?
-            out.push event: "available", data: domain
-          end
-          iter.next
-        end,
-        Proc.new do
-          out.push event: "close", data: "finished"
-          out.close
+    tlds_to_go = TLDS.clone
+    sse_stream do |sse|
+      TLDS.each do |tld|
+        domain = base + tld
+        EM.defer do
+          check_domain(domain, sse)
+          track_progress(tld, tlds_to_go, sse)
         end
-      )
+      end
     end
+  end
+
+  def track_progress(tld, tlds_to_go, sse)
+    tlds_to_go.delete(tld)
+    tlds_done = TLDS.count - tlds_to_go.count
+    if tlds_to_go.count == 0
+      sse.push event: "close", data: "finished"
+      sse.close
+    elsif tlds_done % 10 == 0
+      sse.push event: 'progress', data: {done: tlds_done, total: TLDS.count}.to_json
+    end
+  end
+
+  def check_domain(domain, sse, retries_left=10)
+    if Whois.whois(domain).available?
+      sse.push event: 'free', data: domain
+    end
+  rescue Whois::ConnectionError, Whois::ResponseIsThrottled => exception
+    retry_check_domain(domain, sse, retries_left-2)
+  rescue Timeout::Error => exception
+    retry_check_domain(domain, sse, retries_left-5)
+  rescue Exception => exception
+    mark_error(domain, sse)
+  end
+
+  def retry_check_domain(domain, sse, retries_left)
+    sleep 0.4
+    # sse.push event: 'debug', data: "Retry: #{domain}"
+    retries_left > 0 ? check_domain(domain, sse, retries_left) : mark_error(domain, sse)
+  end
+
+  def mark_error(domain, sse)
+    sse.push event: 'error', data: domain
   end
 
   get '/app.css' do
