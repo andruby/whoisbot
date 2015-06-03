@@ -17,7 +17,9 @@ input.keypress(function(e) {
       console.log(e.data);
     }, false);
     source.addEventListener('progress', function(e) {
-      console.log('progress', e.data);
+      data = jQuery.parseJSON(e.data);
+      percent = Math.round((data.done / data.total)*100);
+      progress.html(percent + '%');
     }, false);
     source.addEventListener('close', function(e) {
       source.close();
