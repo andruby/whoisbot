@@ -1,4 +1,6 @@
 var input = $('.search-input');
+var progress = $('.progress');
+var results = $('.results')
 input.focus();
 input.keypress(function(e) {
   if(e.which == 13) {
@@ -6,7 +8,7 @@ input.keypress(function(e) {
     var domain = input.val();
     var source = new EventSource('/whois/'+domain);
     source.addEventListener('free', function(e) {
-      console.log("Free: ", e.data);
+      results.append('<div class="free">'+e.data+'</div> ');
     }, false);
     source.addEventListener('error', function(e) {
       console.log("Error: ", e.data);

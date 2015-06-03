@@ -20,6 +20,14 @@ class Whoisbot < Sinatra::Base
     erb :index
   end
 
+  get '/app.css' do
+    scss :app
+  end
+
+  get '/app.js' do
+    send_file File.join(settings.views, 'app.js')
+  end
+
   get '/whois/:base' do
     base = params['base']
     tlds_to_go = TLDS.clone
@@ -67,11 +75,4 @@ class Whoisbot < Sinatra::Base
     sse.push event: 'error', data: domain
   end
 
-  get '/app.css' do
-    scss :app
-  end
-
-  get '/app.js' do
-    send_file File.join(settings.views, 'app.js')
-  end
 end
