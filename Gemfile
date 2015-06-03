@@ -5,3 +5,4 @@ gem 'sinatra-contrib' # Reloader
 gem 'whois'
 gem 'thin'
 gem 'sass'
+gem 'sinatra-sse'
