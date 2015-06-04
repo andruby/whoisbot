@@ -1,3 +1,5 @@
+# Get the data file from http://s3.amazonaws.com/alexa-static/top-1m.csv.zip
+
 require 'whois'
 require 'csv'
 
