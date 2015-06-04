@@ -6,3 +6,6 @@ gem 'whois'
 gem 'thin'
 gem 'sass'
 gem 'sinatra-sse'
+
+# used for tld google statistics
+gem 'google-search'

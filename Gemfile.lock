@@ -11,6 +11,8 @@ GEM
     daemons (1.2.2)
     eventmachine (1.0.7)
     expectation (0.3.1)
+    google-search (1.0.3)
+      json
     i18n (0.7.0)
     json (1.8.3)
     minitest (5.7.0)
@@ -50,6 +52,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  google-search
   sass
   sinatra
   sinatra-contrib
