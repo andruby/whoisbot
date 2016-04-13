@@ -4,11 +4,15 @@ require 'sinatra/reloader'
 require 'sinatra/sse'
 require 'whois'
 require 'sass'
+require 'eventmachine'
+
+EventMachine.threadpool_size = 200
 
 TLDS = Whois::Server.definitions[:tld].reject do |tld, host, ops|
   host.nil?
 end.map(&:first)
 
+# Moar threads!
 class Whoisbot < Sinatra::Base
   include Sinatra::SSE
 
