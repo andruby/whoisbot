@@ -1,9 +1,11 @@
-source 'http://rubygems.org'
+source 'https://rubygems.org'
 
-gem 'heroku'
-gem 'foreman'
-gem 'goliath', '1.0.0'
-gem 'yajl-ruby'
+gem 'sinatra'
+gem 'sinatra-contrib' # Reloader
 gem 'whois'
-gem 'celluloid'
-gem 'tilt'
+gem 'thin'
+gem 'sass'
+gem 'sinatra-sse'
+
+# used for tld google statistics
+gem 'google-search'

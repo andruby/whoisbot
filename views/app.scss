@@ -1,0 +1,23 @@
+body {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.search {
+  margin-top: 20px;
+  text-align: center;
+  transition: all 0.5s ease-in-out;
+  &.virgin {
+    margin-top: 200px;
+  }
+}
+
+.search-input {
+  font-size: 1.5em;
+  padding: 5px;
+}
+
+.free {
+  color: green;
+  padding: 5px;
+  float: left;
+}

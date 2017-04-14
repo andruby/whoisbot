@@ -1,99 +1,82 @@
-require 'bundler'
-Bundler.require
-require 'erb'
+# my_app.rb
+require 'sinatra/base'
+require 'sinatra/reloader'
+require 'sinatra/sse'
+require 'whois'
+require 'sass'
+require 'eventmachine'
 
-problem_tlds = []
-TLDS = Whois::Server.definitions[:tld].map(&:first).reject { |v| v.length > 5 } - problem_tlds
-NO_WHOIS_TLDS = Whois::Server.definitions[:tld].select { |tld, host, ops| host.nil? }.map(&:first)
+EventMachine.threadpool_size = 200
 
-class Helper
-  def ref_link(domain, *tlds)
-    "https://www.namecheap.com/domains/domain-name-search/results.aspx?domain=#{domain}&aff=35934&tlds=#{tlds.join(',')}"
+TLDS = Whois::Server.definitions[:tld].reject do |tld, host, ops|
+  host.nil?
+end.map(&:first)
+
+# Moar threads!
+class Whoisbot < Sinatra::Base
+  include Sinatra::SSE
+
+  configure :development do
+    register Sinatra::Reloader
   end
-end
 
-class SuperWho
-  include Celluloid
+  get '/' do
+    erb :index
+  end
 
-  def color_for_domain(base, tld, env, retries = 10)
-    domain = base + tld
-    color = Whois.whois(domain).available? ? 'green' : 'red'
-    env.template(:color, tld: tld, color: color)
+  get '/app.css' do
+    scss :app
+  end
+
+  get '/app.js' do
+    send_file File.join(settings.views, 'app.js')
+  end
+
+  get '/whois/:base' do
+    base = params['base']
+    tlds_to_go = TLDS.clone
+    sse_stream do |sse|
+      TLDS.each do |tld|
+        domain = base + tld
+        EM.defer do
+          check_domain(domain, sse)
+          track_progress(tld, tlds_to_go, sse)
+        end
+      end
+    end
+  end
+
+  def track_progress(tld, tlds_to_go, sse)
+    tlds_to_go.delete(tld)
+    tlds_done = TLDS.count - tlds_to_go.count
+    if tlds_to_go.count == 0
+      sse.push event: "close", data: "finished"
+      sse.close
+    elsif tlds_done % 10 == 0
+      sse.push event: 'progress', data: {done: tlds_done, total: TLDS.count}.to_json
+    end
+  end
+
+  def check_domain(domain, sse, retries_left=10)
+    if Whois.whois(domain).available?
+      sse.push event: 'free', data: domain
+    end
   rescue Whois::ConnectionError, Whois::ResponseIsThrottled => exception
-    retry_cfd(base, tld, env, retries, 2, exception)
+    retry_check_domain(domain, sse, retries_left-2)
   rescue Timeout::Error => exception
-    retry_cfd(base, tld, env, retries, 5, exception)
+    retry_check_domain(domain, sse, retries_left-5)
   rescue Exception => exception
-    mark_error(env, tld, exception)
+    mark_error(domain, sse)
   end
 
-  def retry_cfd(base, tld, env, retries, penalty, e)
+  def retry_check_domain(domain, sse, retries_left)
     sleep 0.4
-    # env.stream_send "<br>Retry (#{retries} left) for [#{tld}]: #{e.class} #{e.message}"
-    retries > 0 ? color_for_domain(base, tld, env, retries - penalty) : mark_error(env, tld, e)
+    # sse.push event: 'debug', data: "Retry: #{domain}"
+    retries_left > 0 ? check_domain(domain, sse, retries_left) : mark_error(domain, sse)
   end
 
-  def mark_error(env, tld, e)
-    env.template(:color, tld: tld, color: '#ff9900')
-    # env.stream_send "<br>Exception for [#{tld}]: #{e.class} #{e.message}"
-  end
-end
-
-class EnvWrapper
-  include Celluloid
-
-  def initialize(env)
-    @env = env
+  def mark_error(domain, sse)
+    sse.push event: 'error', data: domain
   end
 
-  def stream_send(txt)
-    @env.stream_send(txt)
-  end
-
-  def stream_close
-    @env.stream_close
-  end
-
-  def template(*filenames)
-    locals = filenames.pop if filenames.last.is_a?(Hash)
-    filenames.each do |filename|
-      stream_send Tilt.new("templates/#{filename}.html.erb").render(Helper.new, locals || {})
-    end
-  end
-end
-
-class Whoisbot < Goliath::API
-  use Goliath::Rack::Params
-
-  def on_close(env)
-    env.logger.info "Connection closed."
-  end
-
-  def response(env)
-    e = EnvWrapper.new(env)
-    if (base_domain = params['query'])
-      query(e, base_domain)
-    else
-      root(e)
-    end
-    [200, {'Content-Type' => 'text/html'}, Goliath::Response::STREAMING]
-  end
-
-  def root(env)
-    EM.defer do
-      env.template(:head, :root, :credits, :foot)
-      env.stream_close
-    end
-  end
-
-  def query(env, base_domain)
-    EM.defer do
-      env.template(:head, :boxes, :credits, base_domain: base_domain, tlds: TLDS, ignore_tlds: NO_WHOIS_TLDS)
-      pool = SuperWho.pool(size: 40)
-      futures = (TLDS - NO_WHOIS_TLDS).map { |tld| pool.future(:color_for_domain, base_domain, tld, env) }
-      futures.each(&:value)
-      env.template(:foot)
-      env.stream_close
-    end
-  end
 end

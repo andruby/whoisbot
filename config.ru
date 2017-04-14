@@ -1,0 +1,2 @@
+require './whoisbot'
+run Whoisbot
