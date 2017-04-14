@@ -3,8 +3,8 @@ Bundler.require
 require 'erb'
 
 problem_tlds = []
-TLDS = Whois::Server.definitions[:tld].map(&:first).reject { |v| v.length > 5 } - problem_tlds
-NO_WHOIS_TLDS = Whois::Server.definitions[:tld].select { |tld, host, ops| host.nil? }.map(&:first)
+TLDS = Whois::Server.definitions(:tld).map(&:first).reject { |v| v.length > 5 } - problem_tlds
+NO_WHOIS_TLDS = Whois::Server.definitions(:tld).select { |tld, host, ops| host.nil? }.map(&:first)
 
 class Helper
   def ref_link(domain, *tlds)
@@ -16,8 +16,8 @@ class SuperWho
   include Celluloid
 
   def color_for_domain(base, tld, env, retries = 10)
-    domain = base + tld
-    color = Whois.whois(domain).available? ? 'green' : 'red'
+    domain = base + "." + tld
+    color = Whois.whois(domain).parser.available? ? 'green' : 'red'
     env.template(:color, tld: tld, color: color)
   rescue Whois::ConnectionError, Whois::ResponseIsThrottled => exception
     retry_cfd(base, tld, env, retries, 2, exception)
