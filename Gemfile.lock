@@ -17,7 +17,7 @@ GEM
     em-websocket (0.5.0)
       eventmachine (>= 0.12.9)
       http_parser.rb (~> 0.5.3)
-    eventmachine (1.0.7)
+    eventmachine (1.2.3)
     excon (0.15.4)
     foreman (0.53.0)
       thor (>= 0.13.6)
